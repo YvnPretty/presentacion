@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Gestión de Correos</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: rgba(30, 41, 59, 0.95);
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --secondary: #64748b;
+            --danger: #ef4444;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: rgba(148, 163, 184, 0.1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            padding: 2rem;
+            background-image: radial-gradient(circle at 10% 20%, rgba(59, 130, 246, 0.15) 0%, transparent 20%), radial-gradient(circle at 90% 80%, rgba(239, 68, 68, 0.1) 0%, transparent 20%);
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 1000px;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        header {
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            background: linear-gradient(to right, #60a5fa, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+        }
+
+        main {
+            display: grid;
+            grid-template-columns: 1fr 1.5fr;
+            gap: 2rem;
+        }
+
+        @media (max-width: 768px) {
+            main {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        h2 {
+            font-size: 1.25rem;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 0.5rem;
+        }
+
+        select,
+        input {
+            width: 100%;
+            padding: 0.75rem;
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-main);
+            margin-bottom: 0.5rem;
+        }
+
+        select:focus,
+        input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        button {
+            padding: 0.75rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            background: var(--primary);
+            color: white;
+            transition: 0.2s;
+        }
+
+        button:hover {
+            background: var(--primary-hover);
+            transform: translateY(-1px);
+        }
+
+        button.secondary {
+            background: var(--secondary);
+        }
+
+        button.danger {
+            background: var(--danger);
+        }
+
+        button.info {
+            grid-column: span 2;
+            background: #8b5cf6;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            overflow-x: auto;
+        }
+
+        .tabs button {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            flex: 1;
+        }
+
+        .tabs button.active {
+            background: rgba(59, 130, 246, 0.1);
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .list-container {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .list-item {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border);
+            padding: 1rem;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .item-id {
+            font-family: monospace;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            color: var(--secondary);
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 0.5rem 0;
+        }
+
+        .progress-bar div {
+            height: 100%;
+            background: var(--primary);
+            transition: width 0.3s;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-container">
+        <header>
+            <h1>Sistema de Gestión de Correos</h1>
+        </header>
+        <main>
+            <section>
+                <div class="card">
+                    <h2>Operaciones</h2>
+                    <select id="entityType" onchange="updateUI()">
+                        <option value="cliente">Clientes</option>
+                        <option value="producto">Productos</option>
+                        <option value="ruta">Rutas (Estática)</option>
+                        <option value="repartidor">Repartidores</option>
+                    </select>
+                    <div id="formInputs"></div>
+                    <div class="actions">
+                        <button onclick="crear()">Crear</button>
+                        <button onclick="modificar()" class="secondary">Modificar</button>
+                        <button onclick="eliminar()" class="danger">Eliminar</button>
+                        <button onclick="comparar()" class="info" id="btnCompare" style="display:none;">Comparar
+                            Precios</button>
+                    </div>
+                </div>
+                <div class="card">
+                    <h2>Memoria</h2>
+                    <div>Rutas (Estática): <span id="staticCount">0/50</span></div>
+                    <div class="progress-bar">
+                        <div id="staticBar" style="width: 0%"></div>
+                    </div>
+                    <div>Dinámica (Total): <span id="dynamicCount">0</span></div>
+                </div>
+            </section>
+            <section>
+                <div class="card">
+                    <h2>Registros</h2>
+                    <div class="tabs">
+                        <button onclick="setTab('cliente')" id="tab-cliente" class="active">Clientes</button>
+                        <button onclick="setTab('producto')" id="tab-producto">Productos</button>
+                        <button onclick="setTab('ruta')" id="tab-ruta">Rutas</button>
+                        <button onclick="setTab('repartidor')" id="tab-repartidor">Repartidores</button>
+                    </div>
+                    <div id="listContainer" class="list-container"></div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        class Cliente { constructor(id, nombre, direccion) { this.id = id; this.nombre = nombre; this.direccion = direccion; } }
+        class Producto { constructor(id, nombre, precio) { this.id = id; this.nombre = nombre; this.precio = parseFloat(precio); } }
+        class Ruta { constructor(id, origen, destino) { this.id = id; this.origen = origen; this.destino = destino; } }
+        class Repartidor { constructor(id, nombre) { this.id = id; this.nombre = nombre; } }
+
+        const MAX_RUTAS = 50;
+        const rutas = new Array(MAX_RUTAS).fill(null);
+        let rutasCount = 0;
+        let clientes = [];
+        let productos = [];
+        let repartidores = [];
+        let currentType = 'cliente';
+
+        function updateUI() {
+            const type = document.getElementById('entityType').value;
+            currentType = type;
+            const container = document.getElementById('formInputs');
+            let html = '<input type="number" id="id" placeholder="ID (Numérico)" required>';
+
+            if (type === 'cliente') html += '<input id="nombre" placeholder="Nombre"><input id="direccion" placeholder="Dirección">';
+            else if (type === 'producto') html += '<input id="nombre" placeholder="Nombre"><input type="number" id="precio" placeholder="Precio">';
+            else if (type === 'ruta') html += '<input id="origen" placeholder="Origen"><input id="destino" placeholder="Destino">';
+            else if (type === 'repartidor') html += '<input id="nombre" placeholder="Nombre">';
+
+            container.innerHTML = html;
+            document.getElementById('btnCompare').style.display = type === 'producto' ? 'block' : 'none';
+
+            document.querySelectorAll('.tabs button').forEach(b => b.classList.remove('active'));
+            document.getElementById(`tab-${type}`).classList.add('active');
+
+            renderList();
+            updateStats();
+        }
+
+        function setTab(type) {
+            document.getElementById('entityType').value = type;
+            updateUI();
+        }
+
+        function buscar(arr, id, idx = 0) {
+            if (idx >= arr.length) return -1;
+            if (arr[idx] && arr[idx].id == id) return idx;
+            return buscar(arr, id, idx + 1);
+        }
+
+        function crear() {
+            const id = document.getElementById('id').value;
+            if (!id) return alert('ID requerido');
+
+            if (currentType === 'ruta') {
+                if (buscar(rutas.slice(0, rutasCount), id) !== -1) return alert('ID existe');
+                if (rutasCount >= MAX_RUTAS) return alert('Memoria llena');
+                const origen = document.getElementById('origen').value;
+                const destino = document.getElementById('destino').value;
+                if (!origen || !destino) return alert('Datos incompletos');
+                rutas[rutasCount++] = new Ruta(id, origen, destino);
+            } else {
+                const list = getList(currentType);
+                if (buscar(list, id) !== -1) return alert('ID existe');
+
+                if (currentType === 'cliente') {
+                    const nom = document.getElementById('nombre').value;
+                    const dir = document.getElementById('direccion').value;
+                    if (!nom || !dir) return alert('Datos incompletos');
+                    list.push(new Cliente(id, nom, dir));
+                } else if (currentType === 'producto') {
+                    const nom = document.getElementById('nombre').value;
+                    const pre = document.getElementById('precio').value;
+                    if (!nom || !pre) return alert('Datos incompletos');
+                    list.push(new Producto(id, nom, pre));
+                } else if (currentType === 'repartidor') {
+                    const nom = document.getElementById('nombre').value;
+                    if (!nom) return alert('Datos incompletos');
+                    list.push(new Repartidor(id, nom));
+                }
+            }
+            limpiar();
+            renderList();
+            updateStats();
+        }
+
+        function modificar() {
+            const id = document.getElementById('id').value;
+            if (!id) return alert('ID requerido para modificar');
+
+            let item = null;
+            if (currentType === 'ruta') {
+                const idx = buscar(rutas.slice(0, rutasCount), id);
+                if (idx !== -1) item = rutas[idx];
+            } else {
+                const list = getList(currentType);
+                const idx = buscar(list, id);
+                if (idx !== -1) item = list[idx];
+            }
+
+            if (!item) return alert('No encontrado');
+
+            if (currentType === 'cliente') {
+                const nom = document.getElementById('nombre').value;
+                const dir = document.getElementById('direccion').value;
+                if (nom) item.nombre = nom;
+                if (dir) item.direccion = dir;
+            } else if (currentType === 'producto') {
+                const nom = document.getElementById('nombre').value;
+                const pre = document.getElementById('precio').value;
+                if (nom) item.nombre = nom;
+                if (pre) item.precio = parseFloat(pre);
+            } else if (currentType === 'ruta') {
+                const org = document.getElementById('origen').value;
+                const dst = document.getElementById('destino').value;
+                if (org) item.origen = org;
+                if (dst) item.destino = dst;
+            } else if (currentType === 'repartidor') {
+                const nom = document.getElementById('nombre').value;
+                if (nom) item.nombre = nom;
+            }
+
+            limpiar();
+            renderList();
+        }
+
+        function eliminar() {
+            const id = document.getElementById('id').value;
+            if (!id) return alert('ID requerido');
+
+            if (currentType === 'ruta') {
+                const idx = buscar(rutas.slice(0, rutasCount), id);
+                if (idx !== -1) {
+                    for (let i = idx; i < rutasCount - 1; i++) rutas[i] = rutas[i + 1];
+                    rutas[--rutasCount] = null;
+                } else return alert('No encontrado');
+            } else {
+                const list = getList(currentType);
+                const idx = buscar(list, id);
+                if (idx !== -1) list.splice(idx, 1);
+                else return alert('No encontrado');
+            }
+            limpiar();
+            renderList();
+            updateStats();
+        }
+
+        function comparar() {
+            if (productos.length < 2) return alert('Minimo 2 productos');
+            const p1 = productos[0];
+            const p2 = productos[1];
+            let msg = `${p1.nombre} ($${p1.precio}) vs ${p2.nombre} ($${p2.precio}): `;
+            if (p1.precio > p2.precio) msg += `${p1.nombre} es más caro`;
+            else if (p2.precio > p1.precio) msg += `${p2.nombre} es más caro`;
+            else msg += 'Precios iguales';
+            alert(msg);
+        }
+
+        function getList(type) {
+            if (type === 'cliente') return clientes;
+            if (type === 'producto') return productos;
+            if (type === 'repartidor') return repartidores;
+            return [];
+        }
+
+        function renderListRecursive(arr, container, idx = 0) {
+            if (idx >= arr.length) return;
+            const item = arr[idx];
+            if (item) {
+                const div = document.createElement('div');
+                div.className = 'list-item';
+                let info = '';
+                if (item instanceof Cliente) info = `${item.nombre} - ${item.direccion}`;
+                else if (item instanceof Producto) info = `${item.nombre} - $${item.precio}`;
+                else if (item instanceof Ruta) info = `${item.origen} -> ${item.destino}`;
+                else if (item instanceof Repartidor) info = `${item.nombre}`;
+
+                div.innerHTML = `<div><strong>#${item.id}</strong> ${info}</div>`;
+                container.appendChild(div);
+            }
+            renderListRecursive(arr, container, idx + 1);
+        }
+
+        function renderList() {
+            const container = document.getElementById('listContainer');
+            container.innerHTML = '';
+            let list = currentType === 'ruta' ? rutas.slice(0, rutasCount) : getList(currentType);
+            renderListRecursive(list, container);
+        }
+
+        function updateStats() {
+            document.getElementById('staticCount').innerText = `${rutasCount}/${MAX_RUTAS}`;
+            document.getElementById('staticBar').style.width = `${(rutasCount / MAX_RUTAS) * 100}%`;
+            document.getElementById('dynamicCount').innerText = clientes.length + productos.length + repartidores.length;
+        }
+
+        function limpiar() {
+            document.querySelectorAll('input').forEach(i => i.value = '');
+        }
+
+        updateUI();
+    </script>
+</body>
+
+</html>
